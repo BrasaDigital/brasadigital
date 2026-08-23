@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel de pedidos · Brasa Digital</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@600;700&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --carvao:#1C1815; --fumaca:#332C26; --brasa:#D2451C; --ouro:#E8A33D;
+    --osso:#EDE7DC; --osso-suave:#D8D0C0;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--osso); color:var(--carvao); font-family:'Work Sans',Arial,sans-serif; line-height:1.5;}
+  h1,h2{font-family:'Zilla Slab',serif; font-weight:700; margin:0 0 8px;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  .nav{display:flex; justify-content:space-between; align-items:center; padding:16px 28px; border-bottom:1px solid var(--osso-suave);}
+  .marca{font-family:'Zilla Slab',serif; font-weight:700; font-size:16px; letter-spacing:.04em; text-transform:uppercase;}
+  .marca span{color:var(--brasa);}
+  .wrap{max-width:920px; margin:0 auto; padding:40px 24px 80px;}
+
+  /* login */
+  .login-box{max-width:380px; margin:80px auto; text-align:center;}
+  .login-box input{width:100%; padding:12px 14px; border:1px solid var(--osso-suave); border-radius:3px; font-family:inherit; font-size:14.5px; margin-bottom:12px;}
+  .btn{display:inline-flex; align-items:center; gap:8px; padding:12px 22px; background:var(--brasa); color:var(--osso); border:none; border-radius:2px; font-size:14px; font-weight:600; cursor:pointer;}
+  .btn:hover{background:#B33813;}
+  .btn:disabled{opacity:.5; cursor:not-allowed;}
+  .aviso{font-size:13px; color:var(--fumaca); margin-top:10px;}
+
+  /* lista de pedidos */
+  .pedido{background:#fff; border:1px solid var(--osso-suave); border-radius:3px; padding:20px 22px; margin-bottom:14px;}
+  .pedido-cabecalho{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;}
+  .pedido-nome{font-family:'Zilla Slab',serif; font-weight:600; font-size:18px;}
+  .pedido-meta{font-size:13px; color:var(--fumaca);}
+  .status-chip{
+    font-size:11px; text-transform:uppercase; letter-spacing:.06em; padding:4px 10px; border-radius:20px;
+    border:1px solid var(--osso-suave); background:var(--osso);
+  }
+  .acoes{display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; align-items:center;}
+  select{padding:9px 10px; border-radius:3px; border:1px solid var(--osso-suave); font-family:inherit; font-size:13.5px;}
+  .btn-secundario{background:transparent; border:1px solid var(--carvao); color:var(--carvao);}
+  .btn-secundario:hover{background:var(--carvao); color:var(--osso);}
+  textarea.prompt{
+    width:100%; min-height:260px; margin-top:14px; padding:14px; border-radius:3px; border:1px solid var(--osso-suave);
+    font-family:'IBM Plex Mono',monospace; font-size:12.5px; background:var(--carvao); color:var(--osso); display:none; white-space:pre-wrap;
+  }
+  .vazio{text-align:center; padding:60px 0; color:var(--fumaca);}
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <div class="marca">Brasa<span>.</span>Digital <span style="color:var(--fumaca); font-weight:400; text-transform:none; font-size:13px;">painel</span></div>
+  <button class="btn btn-secundario" id="btnSair" style="display:none;">Sair</button>
+</div>
+
+<div class="wrap">
+
+  <div class="login-box" id="loginBox">
+    <h1>Acessar o painel</h1>
+    <p class="aviso" style="margin-bottom:20px;">Digite seu e-mail para receber o link de acesso.</p>
+    <input type="email" id="campoEmailLogin" placeholder="seu@email.com">
+    <button class="btn" id="btnEnviarLink" style="width:100%; justify-content:center;">Enviar link mágico</button>
+    <p class="aviso" id="msgLogin"></p>
+  </div>
+
+  <div id="painelPedidos" style="display:none;">
+    <h1 style="margin-bottom:24px;">Pedidos</h1>
+    <div id="listaPedidos"></div>
+  </div>
+
+</div>
+
+<script>
+const SUPABASE_URL = "https://rwawocydclpumzdxasvn.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3YXdvY3lkY2xwdW16ZHhhc3ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0NzcwNzIsImV4cCI6MjEwMzA1MzA3Mn0.VwDn24W7NK9qbyBUGCaiwZAi0EakvItHldLTuIWF2AM";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const NOMES_TIER = { presenca_rapida: "Presença Rápida", site_completo: "Site Completo", sob_medida: "Sob Medida" };
+const NOMES_STATUS = { rascunho: "Rascunho", em_producao: "Em produção", aguardando_aprovacao: "Aguardando aprovação", aprovado: "Aprovado", reprovado: "Reprovado", no_ar: "No ar" };
+
+const GUIA_DE_VOZ = `Tom: profissional, caloroso, direto. Fala com o dono do negócio como um parceiro que entende do assunto, não como vendedor nem como manual técnico.
+Vocabulário: nunca usar termo técnico voltado ao cliente (landing page, tier, CTA, SEO, UX). Evitar adjetivo vazio sem prova por trás (revolucionário, incrível, único).
+Regras de estilo: sem travessão em-dash em nenhuma frase; evitar ritmo staccato de contraste binário; evitar clichês de abertura (Descubra..., Você sabia que..., No mundo dinâmico de hoje...); sem preâmbulo; chamada para ação sempre com verbo direto e curto.`;
+
+function montarPrompt(pedido, respostas){
+  return `Você é o redator do Brasa Digital. Siga estritamente o guia de voz de marca abaixo.
+
+${GUIA_DE_VOZ}
+
+Gere o conteúdo do site do cliente abaixo, devolvendo a resposta em JSON, com uma chave por seção, neste formato:
+{"hero": {"headline": "", "subheadline": ""}, "sobre": {"titulo": "", "texto": ""}, "servicos": {"titulo": "", "itens": [{"nome": "", "descricao": ""}]}, "contato": {"whatsapp": "", "endereco": "", "horario": ""}}
+
+Dados do cliente:
+- Plano: ${NOMES_TIER[pedido.tier] || pedido.tier}
+- Segmento do negócio: ${respostas.segmento || "não informado"}
+- Nome do negócio: ${respostas.nome_negocio || "não informado"}
+- Descrição fornecida pelo cliente: ${respostas.descricao || "não informado"}
+- Estilo visual escolhido (template): ${respostas.estilo || "não escolhido"}
+- Quem escreve os textos: ${respostas.quem_escreve === "cliente" ? "o próprio cliente vai revisar e ajustar, gere um rascunho para referência" : "a IA deve escrever o texto final"}
+- WhatsApp do negócio (exibir no site): ${respostas.whatsapp_negocio || "não informado"}
+- Endereço: ${respostas.endereco || "não informado"}
+- Horário de funcionamento: ${respostas.horario || "não informado"}
+- Tem fotos próprias: ${respostas.tem_fotos === "sim" ? "sim, cliente vai enviar" : "não, usar banco de imagens do segmento"}
+- Tem logo: ${respostas.tem_logo === "sim" ? "sim, cliente vai enviar" : respostas.tem_logo === "refazer" ? "tem, mas quer refazer" : "não, gerar versão tipográfica"}
+`;
+}
+
+async function carregarSessao(){
+  const { data: { session } } = await sb.auth.getSession();
+  if(session){ mostrarPainel(); carregarPedidos(); }
+}
+
+document.getElementById("btnEnviarLink").addEventListener("click", async () => {
+  const email = document.getElementById("campoEmailLogin").value.trim();
+  const msg = document.getElementById("msgLogin");
+  if(!email){ msg.textContent = "Digite um e-mail válido."; return; }
+  const btn = document.getElementById("btnEnviarLink");
+  btn.disabled = true; btn.textContent = "Enviando...";
+  const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.href } });
+  btn.disabled = false; btn.textContent = "Enviar link mágico";
+  msg.textContent = error ? "Não consegui enviar, tenta de novo." : "Link enviado! Confere seu e-mail (e o spam).";
+});
+
+document.getElementById("btnSair").addEventListener("click", async () => {
+  await sb.auth.signOut();
+  window.location.reload();
+});
+
+function mostrarPainel(){
+  document.getElementById("loginBox").style.display = "none";
+  document.getElementById("painelPedidos").style.display = "block";
+  document.getElementById("btnSair").style.display = "inline-flex";
+}
+
+async function carregarPedidos(){
+  const lista = document.getElementById("listaPedidos");
+  lista.innerHTML = "Carregando...";
+
+  const { data: pedidos, error } = await sb
+    .from("pedidos")
+    .select("*, clientes(nome_negocio, contato_whatsapp, contato_email), formulario_respostas(respostas)")
+    .order("criado_em", { ascending: false });
+
+  if(error){ lista.innerHTML = "Não consegui carregar os pedidos."; console.error(error); return; }
+  if(!pedidos.length){ lista.innerHTML = '<div class="vazio">Nenhum pedido ainda.</div>'; return; }
+
+  lista.innerHTML = "";
+  pedidos.forEach(pedido => {
+    const respostas = pedido.formulario_respostas?.[0]?.respostas || {};
+    const nomeNegocio = pedido.clientes?.nome_negocio || respostas.nome_negocio || "sem nome";
+
+    const el = document.createElement("div");
+    el.className = "pedido";
+    el.innerHTML = `
+      <div class="pedido-cabecalho">
+        <div>
+          <div class="pedido-nome">${nomeNegocio}</div>
+          <div class="pedido-meta">${NOMES_TIER[pedido.tier] || pedido.tier} · R$ ${pedido.preco} · ${pedido.clientes?.contato_whatsapp || ""} · <span class="mono">${new Date(pedido.criado_em).toLocaleString('pt-BR')}</span></div>
+        </div>
+        <span class="status-chip">${NOMES_STATUS[pedido.status] || pedido.status}</span>
+      </div>
+      <div class="acoes">
+        <select data-pedido-id="${pedido.id}" class="seletor-status">
+          ${Object.entries(NOMES_STATUS).map(([valor, rotulo]) => `<option value="${valor}" ${valor === pedido.status ? "selected" : ""}>${rotulo}</option>`).join("")}
+        </select>
+        <button class="btn btn-secundario btn-prompt" data-id="${pedido.id}">Ver / copiar prompt</button>
+      </div>
+      <textarea class="prompt mono" id="prompt-${pedido.id}" readonly></textarea>
+    `;
+    lista.appendChild(el);
+
+    el.querySelector(".seletor-status").addEventListener("change", async (e) => {
+      const novoStatus = e.target.value;
+      await sb.from("pedidos").update({ status: novoStatus }).eq("id", pedido.id);
+      el.querySelector(".status-chip").textContent = NOMES_STATUS[novoStatus];
+    });
+
+    el.querySelector(".btn-prompt").addEventListener("click", async () => {
+      const area = document.getElementById(`prompt-${pedido.id}`);
+      const promptTexto = montarPrompt(pedido, respostas);
+      area.value = promptTexto;
+      area.style.display = area.style.display === "none" ? "block" : "none";
+      if(area.style.display === "block"){
+        area.select();
+        try{ await navigator.clipboard.writeText(promptTexto); }catch(e){}
+        await sb.from("pedidos").update({ prompt_gerado: promptTexto }).eq("id", pedido.id);
+      }
+    });
+  });
+}
+
+sb.auth.onAuthStateChange((event) => {
+  if(event === "SIGNED_IN"){ mostrarPainel(); carregarPedidos(); }
+});
+
+carregarSessao();
+</script>
+
+</body>
+</html>
