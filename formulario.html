@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fazer meu site · Brasa Digital</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --carvao:#1C1815; --fumaca:#332C26; --brasa:#D2451C; --ouro:#E8A33D;
+    --osso:#EDE7DC; --osso-suave:#D8D0C0;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--osso); color:var(--carvao); font-family:'Work Sans',Arial,sans-serif; line-height:1.55;}
+  h1,h2,h3{font-family:'Zilla Slab',serif; font-weight:700; margin:0 0 10px;}
+  .nav{display:flex; justify-content:space-between; align-items:center; padding:18px 32px; border-bottom:1px solid var(--osso-suave);}
+  .marca{font-family:'Zilla Slab',serif; font-weight:700; font-size:17px; letter-spacing:.04em; text-transform:uppercase;}
+  .marca span{color:var(--brasa);}
+  .wrap{max-width:560px; margin:0 auto; padding:56px 24px 96px;}
+  .progresso{display:flex; gap:6px; margin-bottom:28px;}
+  .progresso span{height:3px; flex:1; background:var(--osso-suave); border-radius:2px;}
+  .progresso span.ativo{background:var(--brasa);}
+  .tela{display:none;}
+  .tela.ativa{display:block;}
+  .rotulo{font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--brasa); font-weight:600; margin-bottom:10px; display:block;}
+  .opcao{
+    display:block; width:100%; text-align:left; padding:15px 18px; margin-bottom:10px;
+    border:1px solid var(--osso-suave); border-radius:3px; background:#fff; font-size:14.5px;
+    color:var(--carvao); cursor:pointer; font-family:inherit;
+  }
+  .opcao:hover{border-color:var(--brasa);}
+  .opcao.selecionada{border-color:var(--brasa); background:#FBEDE7;}
+  input[type=text], input[type=email], input[type=date], textarea{
+    width:100%; padding:13px 14px; border:1px solid var(--osso-suave); border-radius:3px;
+    font-family:inherit; font-size:14.5px; margin-bottom:14px; background:#fff; color:var(--carvao);
+  }
+  textarea{min-height:90px; resize:vertical;}
+  label.campo{display:block; font-size:13px; color:var(--fumaca); margin-bottom:6px;}
+  .btn{
+    display:inline-flex; align-items:center; gap:8px; padding:13px 26px; background:var(--brasa);
+    color:var(--osso); border:none; border-radius:2px; font-size:14px; font-weight:600; cursor:pointer;
+  }
+  .btn:hover{background:#B33813;}
+  .btn:disabled{opacity:.5; cursor:not-allowed;}
+  .btn-voltar{background:transparent; color:var(--fumaca); border:1px solid var(--osso-suave); margin-right:10px;}
+  .rodape-nav{display:flex; margin-top:8px;}
+  .aviso{font-size:13px; color:var(--fumaca); margin-top:6px;}
+  .sucesso{text-align:center; padding:40px 0;}
+  .erro{color:var(--brasa); font-size:13px; margin-top:8px;}
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <div class="marca">Brasa<span>.</span>Digital</div>
+</div>
+
+<div class="wrap">
+  <div class="progresso" id="barraProgresso"></div>
+  <form id="formPedido">
+
+    <!-- TELA 1: classificação -->
+    <div class="tela ativa" data-tela="classificacao">
+      <span class="rotulo">Pergunta 1</span>
+      <h2>O que você precisa que esse site faça?</h2>
+      <button type="button" class="opcao" data-campo="tier" data-valor="presenca_rapida">Uma página só, para vender um produto ou divulgar um serviço</button>
+      <button type="button" class="opcao" data-campo="tier" data-valor="site_completo">Um site com várias páginas contando quem eu sou e o que faço</button>
+      <button type="button" class="opcao" data-campo="tier" data-valor="sob_medida">Uma loja para vender vários produtos online</button>
+    </div>
+
+    <!-- TELA 2: segmento -->
+    <div class="tela" data-tela="segmento">
+      <span class="rotulo">Sobre o seu negócio</span>
+      <h2>Qual o segmento do seu negócio?</h2>
+      <button type="button" class="opcao" data-campo="segmento" data-valor="alimentacao">Alimentação</button>
+      <button type="button" class="opcao" data-campo="segmento" data-valor="beleza">Beleza e estética</button>
+      <button type="button" class="opcao" data-campo="segmento" data-valor="saude">Saúde e bem-estar</button>
+      <button type="button" class="opcao" data-campo="segmento" data-valor="moda">Moda e acessórios</button>
+      <button type="button" class="opcao" data-campo="segmento" data-valor="servicos">Serviços profissionais</button>
+      <button type="button" class="opcao" data-campo="segmento" data-valor="outro">Outro</button>
+    </div>
+
+    <!-- TELA 3: fotos -->
+    <div class="tela" data-tela="fotos">
+      <span class="rotulo">Material</span>
+      <h2>Você tem fotos do seu negócio para usar no site?</h2>
+      <button type="button" class="opcao" data-campo="tem_fotos" data-valor="sim">Sim, vou enviar por WhatsApp depois</button>
+      <button type="button" class="opcao" data-campo="tem_fotos" data-valor="nao">Não, pode usar imagens de banco do meu segmento</button>
+    </div>
+
+    <!-- TELA 4: logo -->
+    <div class="tela" data-tela="logo">
+      <span class="rotulo">Material</span>
+      <h2>Você já tem uma logo pronta?</h2>
+      <button type="button" class="opcao" data-campo="tem_logo" data-valor="sim">Sim, vou enviar por WhatsApp depois</button>
+      <button type="button" class="opcao" data-campo="tem_logo" data-valor="nao">Não tenho, quero uma versão tipográfica incluída</button>
+      <button type="button" class="opcao" data-campo="tem_logo" data-valor="refazer">Tenho, mas quero refazer</button>
+    </div>
+
+    <!-- TELA 5: contato público do negócio -->
+    <div class="tela" data-tela="contato_negocio">
+      <span class="rotulo">Contato público</span>
+      <h2>Como o cliente final vai falar com o seu negócio?</h2>
+      <label class="campo">WhatsApp</label>
+      <input type="text" id="campo_whatsapp_negocio" placeholder="(11) 91234-5678">
+      <label class="campo">Endereço (opcional)</label>
+      <input type="text" id="campo_endereco">
+      <label class="campo">Horário de funcionamento</label>
+      <input type="text" id="campo_horario" placeholder="Seg a sex, 9h às 18h">
+    </div>
+
+    <!-- TELA 6: domínio -->
+    <div class="tela" data-tela="dominio">
+      <span class="rotulo">Endereço do site</span>
+      <h2>Você já tem um domínio?</h2>
+      <button type="button" class="opcao" data-campo="tem_dominio" data-valor="sim">Sim, já tenho</button>
+      <button type="button" class="opcao" data-campo="tem_dominio" data-valor="nao">Não, preciso de ajuda para registrar</button>
+      <label class="campo" style="margin-top:12px;">Qual domínio (o que já tem, ou o que gostaria)?</label>
+      <input type="text" id="campo_dominio" placeholder="seunegocio.com.br">
+      <p class="aviso">Verificamos a disponibilidade manualmente por enquanto e confirmamos com você por WhatsApp.</p>
+    </div>
+
+    <!-- TELA 7: dados do negócio e objetivo -->
+    <div class="tela" data-tela="dados_negocio">
+      <span class="rotulo">Sobre o pedido</span>
+      <h2>Conte um pouco sobre o que você precisa</h2>
+      <label class="campo">Nome do negócio</label>
+      <input type="text" id="campo_nome_negocio" required>
+      <label class="campo">Descreva em poucas linhas o que você faz e o objetivo do site</label>
+      <textarea id="campo_descricao" required></textarea>
+    </div>
+
+    <!-- TELA 8: estilo visual -->
+    <div class="tela" data-tela="estilo">
+      <span class="rotulo">Estilo</span>
+      <h2>Qual estilo visual combina com o seu negócio?</h2>
+      <button type="button" class="opcao" data-campo="estilo" data-valor="vitrine">Vitrine — editorial, elegante</button>
+      <button type="button" class="opcao" data-campo="estilo" data-valor="sereno">Sereno — calmo, clínico</button>
+      <button type="button" class="opcao" data-campo="estilo" data-valor="robusto">Robusto — técnico, industrial</button>
+      <button type="button" class="opcao" data-campo="estilo" data-valor="traco">Traço — criativo, ousado</button>
+      <button type="button" class="opcao" data-campo="estilo" data-valor="aconchego">Aconchego — caloroso, artesanal</button>
+      <button type="button" class="opcao" data-campo="estilo" data-valor="estrutura">Estrutura — sóbrio, confiante</button>
+    </div>
+
+    <!-- TELA 9: textos -->
+    <div class="tela" data-tela="textos">
+      <span class="rotulo">Textos do site</span>
+      <h2>Você prefere escrever os textos, ou quer que a gente escreva pra você?</h2>
+      <button type="button" class="opcao" data-campo="quem_escreve" data-valor="cliente">Eu mesmo escrevo</button>
+      <button type="button" class="opcao" data-campo="quem_escreve" data-valor="brasa">Vocês escrevem pra mim</button>
+    </div>
+
+    <!-- TELA 10: contato do pedido -->
+    <div class="tela" data-tela="contato_pedido">
+      <span class="rotulo">Último passo</span>
+      <h2>Seu contato, pra combinarmos os próximos passos</h2>
+      <label class="campo">Seu nome</label>
+      <input type="text" id="campo_seu_nome" required>
+      <label class="campo">WhatsApp</label>
+      <input type="text" id="campo_seu_whatsapp" required>
+      <label class="campo">E-mail (opcional)</label>
+      <input type="email" id="campo_seu_email">
+    </div>
+
+    <!-- TELA FINAL: sucesso -->
+    <div class="tela" data-tela="sucesso">
+      <div class="sucesso">
+        <h2>Pedido recebido!</h2>
+        <p>Em até 24h úteis você recebe as instruções de pagamento do sinal pelo WhatsApp.</p>
+      </div>
+    </div>
+
+    <div class="rodape-nav" id="navBotoes">
+      <button type="button" class="btn btn-voltar" id="btnVoltar">Voltar</button>
+      <button type="button" class="btn" id="btnAvancar">Continuar</button>
+    </div>
+    <p class="erro" id="msgErro"></p>
+  </form>
+</div>
+
+<script>
+const SUPABASE_URL = "https://rwawocydclpumzdxasvn.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3YXdvY3lkY2xwdW16ZHhhc3ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0NzcwNzIsImV4cCI6MjEwMzA1MzA3Mn0.VwDn24W7NK9qbyBUGCaiwZAi0EakvItHldLTuIWF2AM";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const dados = {};
+
+// ordem das telas; "sob_medida" pula direto pro contato depois do segmento (pré-briefing simplificado, tratado manualmente)
+function ordemTelas(){
+  const base = ["classificacao","segmento","fotos","logo","contato_negocio","dominio","dados_negocio"];
+  if(dados.tier === "sob_medida"){
+    return ["classificacao","segmento","dados_negocio","contato_pedido","sucesso"];
+  }
+  return [...base, "estilo", "textos", "contato_pedido", "sucesso"];
+}
+
+let indiceAtual = 0;
+
+function telaAtualNome(){ return ordemTelas()[indiceAtual]; }
+
+function render(){
+  const ordem = ordemTelas();
+  document.querySelectorAll(".tela").forEach(t => t.classList.remove("ativa"));
+  const nomeTela = ordem[indiceAtual];
+  document.querySelector(`.tela[data-tela="${nomeTela}"]`).classList.add("ativa");
+
+  // barra de progresso
+  const barra = document.getElementById("barraProgresso");
+  barra.innerHTML = "";
+  ordem.slice(0, ordem.length - 1).forEach((_, i) => {
+    const span = document.createElement("span");
+    if(i <= indiceAtual) span.classList.add("ativa");
+    barra.appendChild(span);
+  });
+
+  // navegação
+  document.getElementById("btnVoltar").style.display = indiceAtual === 0 ? "none" : "inline-flex";
+  const ehFinal = nomeTela === "sucesso";
+  document.getElementById("navBotoes").style.display = ehFinal ? "none" : "flex";
+}
+
+document.querySelectorAll(".opcao").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const campo = btn.dataset.campo;
+    const valor = btn.dataset.valor;
+    dados[campo] = valor;
+    document.querySelectorAll(`.opcao[data-campo="${campo}"]`).forEach(b => b.classList.remove("selecionada"));
+    btn.classList.add("selecionada");
+  });
+});
+
+function coletarCamposDaTela(nomeTela){
+  if(nomeTela === "contato_negocio"){
+    dados.whatsapp_negocio = document.getElementById("campo_whatsapp_negocio").value;
+    dados.endereco = document.getElementById("campo_endereco").value;
+    dados.horario = document.getElementById("campo_horario").value;
+  }
+  if(nomeTela === "dominio"){
+    dados.dominio_desejado = document.getElementById("campo_dominio").value;
+  }
+  if(nomeTela === "dados_negocio"){
+    dados.nome_negocio = document.getElementById("campo_nome_negocio").value;
+    dados.descricao = document.getElementById("campo_descricao").value;
+  }
+  if(nomeTela === "contato_pedido"){
+    dados.seu_nome = document.getElementById("campo_seu_nome").value;
+    dados.seu_whatsapp = document.getElementById("campo_seu_whatsapp").value;
+    dados.seu_email = document.getElementById("campo_seu_email").value;
+  }
+}
+
+function telaValida(nomeTela){
+  const exigeOpcao = ["classificacao","segmento","fotos","logo","tem_dominio","estilo","textos"];
+  if(nomeTela === "classificacao") return !!dados.tier;
+  if(nomeTela === "segmento") return !!dados.segmento;
+  if(nomeTela === "fotos") return !!dados.tem_fotos;
+  if(nomeTela === "logo") return !!dados.tem_logo;
+  if(nomeTela === "dominio") return !!dados.tem_dominio;
+  if(nomeTela === "estilo") return !!dados.estilo;
+  if(nomeTela === "textos") return !!dados.quem_escreve;
+  if(nomeTela === "dados_negocio") return !!(dados.nome_negocio && dados.descricao);
+  if(nomeTela === "contato_pedido") return !!(dados.seu_nome && dados.seu_whatsapp);
+  return true;
+}
+
+async function enviarPedido(){
+  const precoPorTier = { presenca_rapida: 997, site_completo: 2497, sob_medida: 0 };
+  const rodadasPorTier = { presenca_rapida: 1, site_completo: 2, sob_medida: 0 };
+
+  const { data: cliente, error: erroCliente } = await sb.from("clientes").insert({
+    nome_negocio: dados.nome_negocio,
+    contato_email: dados.seu_email || null,
+    contato_whatsapp: dados.seu_whatsapp,
+    dominio: dados.dominio_desejado || null
+  }).select().single();
+
+  if(erroCliente){ throw erroCliente; }
+
+  const { data: pedido, error: erroPedido } = await sb.from("pedidos").insert({
+    client_id: cliente.id,
+    tier: dados.tier,
+    preco: precoPorTier[dados.tier],
+    rodadas_incluidas: rodadasPorTier[dados.tier]
+  }).select().single();
+
+  if(erroPedido){ throw erroPedido; }
+
+  const { error: erroRespostas } = await sb.from("formulario_respostas").insert({
+    pedido_id: pedido.id,
+    respostas: dados
+  });
+
+  if(erroRespostas){ throw erroRespostas; }
+}
+
+document.getElementById("btnAvancar").addEventListener("click", async () => {
+  const nomeTela = telaAtualNome();
+  coletarCamposDaTela(nomeTela);
+  const msgErro = document.getElementById("msgErro");
+  msgErro.textContent = "";
+
+  if(!telaValida(nomeTela)){
+    msgErro.textContent = "Preenche esse campo antes de continuar.";
+    return;
+  }
+
+  const ordem = ordemTelas();
+  const proximaTela = ordem[indiceAtual + 1];
+
+  if(proximaTela === "sucesso"){
+    const btn = document.getElementById("btnAvancar");
+    btn.disabled = true;
+    btn.textContent = "Enviando...";
+    try{
+      await enviarPedido();
+      indiceAtual++;
+      render();
+    }catch(e){
+      msgErro.textContent = "Não consegui enviar, tenta de novo em instantes.";
+      btn.disabled = false;
+      btn.textContent = "Continuar";
+    }
+    return;
+  }
+
+  indiceAtual++;
+  render();
+});
+
+document.getElementById("btnVoltar").addEventListener("click", () => {
+  if(indiceAtual > 0){ indiceAtual--; render(); }
+});
+
+render();
+</script>
+
+</body>
+</html>
