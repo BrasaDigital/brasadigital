@@ -270,30 +270,32 @@ async function enviarPedido(){
   const precoPorTier = { presenca_rapida: 997, site_completo: 2497, sob_medida: 0 };
   const rodadasPorTier = { presenca_rapida: 1, site_completo: 2, sob_medida: 0 };
 
-  const { data: cliente, error: erroCliente } = await sb.from("clientes").insert({
+  const clienteId = crypto.randomUUID();
+  const pedidoId = crypto.randomUUID();
+
+  const { error: erroCliente } = await sb.from("clientes").insert({
+    id: clienteId,
     nome_negocio: dados.nome_negocio,
     contato_email: dados.seu_email || null,
     contato_whatsapp: dados.seu_whatsapp,
     dominio: dados.dominio_desejado || null
-  }).select().single();
+  });
+  if(erroCliente){ console.error("erro clientes:", erroCliente); throw erroCliente; }
 
-  if(erroCliente){ throw erroCliente; }
-
-  const { data: pedido, error: erroPedido } = await sb.from("pedidos").insert({
-    client_id: cliente.id,
+  const { error: erroPedido } = await sb.from("pedidos").insert({
+    id: pedidoId,
+    client_id: clienteId,
     tier: dados.tier,
     preco: precoPorTier[dados.tier],
     rodadas_incluidas: rodadasPorTier[dados.tier]
-  }).select().single();
-
-  if(erroPedido){ throw erroPedido; }
+  });
+  if(erroPedido){ console.error("erro pedidos:", erroPedido); throw erroPedido; }
 
   const { error: erroRespostas } = await sb.from("formulario_respostas").insert({
-    pedido_id: pedido.id,
+    pedido_id: pedidoId,
     respostas: dados
   });
-
-  if(erroRespostas){ throw erroRespostas; }
+  if(erroRespostas){ console.error("erro formulario_respostas:", erroRespostas); throw erroRespostas; }
 }
 
 document.getElementById("btnAvancar").addEventListener("click", async () => {
